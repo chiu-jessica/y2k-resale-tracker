@@ -1,7 +1,8 @@
 requests
-beautifulsoup4
 pandas
 google-cloud-bigquery
+pyarrow
+db-dtypes
 python-dotenv
 matplotlib
 seaborn

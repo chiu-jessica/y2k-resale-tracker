@@ -1,13 +1,13 @@
 """
 etl.py
 
-Cleans the raw scraped listings: parses prices, guesses item category,
-removes duplicates and rows with missing prices.
+Cleans the raw listings from the eBay Browse API: guesses item category,
+drops rows with a missing price, removes duplicates.
 
-Run after scraper.py. Produces data/cleaned_listings.csv.
+Run after ebay_api_client.py (or mock_data.py). Produces
+data/cleaned_listings.csv.
 """
 
-import re
 import pandas as pd
 
 CATEGORY_KEYWORDS = {
@@ -17,13 +17,6 @@ CATEGORY_KEYWORDS = {
     "pants": ["pants", "jeans", "sweatpants", "tracksuit"],
     "accessory": ["hat", "bag", "purse", "belt"],
 }
-
-
-def parse_price(price_str: str) -> float | None:
-    if not isinstance(price_str, str):
-        return None
-    match = re.search(r"[\d,]+\.\d{2}", price_str)
-    return float(match.group().replace(",", "")) if match else None
 
 
 def guess_item_type(title: str) -> str:
@@ -36,7 +29,9 @@ def guess_item_type(title: str) -> str:
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df["price"] = df["price_raw"].apply(parse_price)
+    # The API returns price as a number already; coerce just in case a
+    # listing came through without one.
+    df["price"] = pd.to_numeric(df["price"], errors="coerce")
     df["item_type"] = df["title"].apply(guess_item_type)
 
     before = len(df)
