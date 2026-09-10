@@ -1,0 +1,30 @@
+name: Scrape and Load Data
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # every Monday at 6am UTC
+  workflow_dispatch:      # allows manual trigger from the GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r requirements.txt
+
+      - run: python scraper.py
+      - run: python etl.py
+
+      - name: Write GCP key
+        run: echo '${{ secrets.GCP_KEY_JSON }}' > gcp-key.json
+
+      - name: Load to BigQuery
+        run: python load_to_bigquery.py
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
+          BIGQUERY_PROJECT_ID: ${{ secrets.BIGQUERY_PROJECT_ID }}

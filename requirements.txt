@@ -1,0 +1,7 @@
+requests
+beautifulsoup4
+pandas
+google-cloud-bigquery
+python-dotenv
+matplotlib
+seaborn
