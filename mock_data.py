@@ -13,6 +13,7 @@ unchanged.
 """
 
 import random
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -20,7 +21,19 @@ SEED = 20260910
 random.seed(SEED)
 
 CURRENCY = "USD"
-CSV_COLUMNS = ["brand", "title", "price", "currency", "condition", "item_url"]
+CSV_COLUMNS = [
+    "brand",
+    "title",
+    "price",
+    "currency",
+    "condition",
+    "item_url",
+    "fetched_at",
+]
+
+# One UTC timestamp per run, captured when the script starts, so the
+# downstream table can distinguish one API pull from the next.
+FETCHED_AT = datetime.now(timezone.utc).isoformat()
 
 # condition -> relative weight (vintage resale skews used)
 CONDITIONS = {
@@ -136,6 +149,7 @@ def main():
                     "currency": CURRENCY,
                     "condition": condition,
                     "item_url": fake_item_url(),
+                    "fetched_at": FETCHED_AT,
                 }
             )
             made += 1

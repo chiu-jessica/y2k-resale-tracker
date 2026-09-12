@@ -34,6 +34,12 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
     df["price"] = pd.to_numeric(df["price"], errors="coerce")
     df["item_type"] = df["title"].apply(guess_item_type)
 
+    # Keep the fetch timestamp intact through cleaning — it's what makes a
+    # "price over time" trend possible once several runs have landed in
+    # BigQuery. Parse to real datetimes so load_to_bigquery.py can send it
+    # as a TIMESTAMP column.
+    df["fetched_at"] = pd.to_datetime(df["fetched_at"], utc=True, errors="coerce")
+
     before = len(df)
     df = df.dropna(subset=["price"])
     df = df.drop_duplicates(subset=["title", "price"])

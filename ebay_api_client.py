@@ -17,6 +17,7 @@ same columns.
 
 import base64
 import os
+from datetime import datetime, timezone
 
 import pandas as pd
 import requests
@@ -31,7 +32,20 @@ SCOPE = "https://api.ebay.com/oauth/api_scope"
 BRANDS = ["Ed Hardy", "Baby Phat", "Juicy Couture"]
 RESULTS_PER_BRAND = 200  # eBay caps limit at 200 per request
 
-CSV_COLUMNS = ["brand", "title", "price", "currency", "condition", "item_url"]
+# Stamp every row from a single run with the same UTC timestamp, captured
+# the moment the script starts. This is what lets BigQuery build a real
+# price-over-time series across API pulls.
+FETCHED_AT = datetime.now(timezone.utc).isoformat()
+
+CSV_COLUMNS = [
+    "brand",
+    "title",
+    "price",
+    "currency",
+    "condition",
+    "item_url",
+    "fetched_at",
+]
 
 
 def get_access_token() -> str:
@@ -78,6 +92,7 @@ def search_brand(brand: str, token: str, limit: int = RESULTS_PER_BRAND) -> list
                 "currency": price.get("currency"),
                 "condition": item.get("condition"),
                 "item_url": item.get("itemWebUrl"),
+                "fetched_at": FETCHED_AT,
             }
         )
     print(f"  {brand}: {len(rows)} listings")

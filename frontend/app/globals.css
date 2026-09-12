@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Glitch&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- Grungy Y2K bling / alternative scene theme --- */
+
+:root {
+  --bg-black: #0a0a0a;
+  --bg-black-soft: #1a1a1a;
+  --hot-pink: #ff006e;
+  --hot-pink-bright: #ff1493;
+  --pink-muted: #ffb3d9;
+  --white: #f5f5f5;
+}
+
+body {
+  background-color: var(--bg-black);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+}
+
+.font-grunge {
+  font-family: 'Rubik Glitch', cursive;
+}
