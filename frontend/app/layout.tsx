@@ -26,7 +26,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col pt-16">
         <NavBar />
-        {children}
+        {/* Explicit flex-1 + w-full: body's flex children should stretch to
+            full width by default, but the Next.js dev-tools overlay adds
+            its own (non-stretching) elements as body siblings, which can
+            throw that default off in dev. Pinning it here guarantees every
+            page gets the full width regardless. */}
+        <div className="w-full flex-1">{children}</div>
       </body>
     </html>
   );

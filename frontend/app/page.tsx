@@ -36,16 +36,15 @@ export default function Home() {
       <section className="relative overflow-hidden px-6 py-28 text-center">
         <HalftoneBackground />
         <div className="relative">
-          <h1 className="font-grunge text-5xl sm:text-7xl text-[#ff1493] tracking-wide">
+          <h1 className="font-grunge text-5xl sm:text-7xl text-[#ff006e] tracking-wide">
             Y2K RESALE TRACKER
           </h1>
           <p className="mt-4 text-[#ffb3d9] max-w-xl mx-auto">
-            Live resale prices for Ed Hardy, Baby Phat, and Juicy Couture — pulled
-            straight from eBay.
+            Live resale prices for popular Y2K brands pulled straight from eBay.
           </p>
           <Link
             href="/dashboard"
-            className="inline-block mt-8 bg-[#ff006e] text-[#f5f5f5] font-semibold px-8 py-3 rounded-lg hover:bg-[#ff1493] transition-colors"
+            className="inline-block mt-8 bg-[#ff006e] text-[#f5f5f5] font-semibold px-8 py-3 rounded-lg hover:brightness-90 transition"
           >
             Explore the Dashboard
           </Link>
@@ -54,7 +53,7 @@ export default function Home() {
 
       <GrungeDivider />
 
-      <section className="px-6 py-12 max-w-5xl mx-auto">
+      <section className="px-8 py-12 max-w-6xl mx-auto">
         {error && (
           <p className="text-[#ffb3d9] text-center mb-6">
             Couldn&apos;t reach the API ({error}). Is the backend running at {API_BASE}?

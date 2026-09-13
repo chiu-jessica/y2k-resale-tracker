@@ -5,15 +5,24 @@ Generates a realistic stand-in for data/raw_listings.csv while eBay
 Production API access is pending. The output has the exact same columns
 ebay_api_client.py produces:
 
-    brand, title, price, currency, condition, item_url
+    brand, title, price, currency, condition, item_url, fetched_at
 
-Once live API access comes through, run ebay_api_client.py instead — the
-rest of the pipeline (etl.py -> load_to_bigquery.py -> analyze.py) is
-unchanged.
+A single real collection run only ever produces one fetched_at value, which
+makes for a boring "price over time" chart until the pipeline has actually
+been run week after week. To make that chart useful right away, this
+generates WEEKS_OF_HISTORY separate snapshots — each with its own
+backdated fetched_at and its own small price drift — instead of one flat
+batch. Only the newest snapshot (fetched_at = now) is meant to represent
+"currently active" listings; the backend's "current" endpoints filter down
+to it, so the backdated ones only ever show up in /api/trends.
+
+Once live API access comes through, run ebay_api_client.py instead — it
+still only produces one snapshot per run, which is correct for real data
+(you'd actually run it weekly, rather than fake multiple runs at once).
 """
 
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -31,9 +40,12 @@ CSV_COLUMNS = [
     "fetched_at",
 ]
 
-# One UTC timestamp per run, captured when the script starts, so the
-# downstream table can distinguish one API pull from the next.
-FETCHED_AT = datetime.now(timezone.utc).isoformat()
+# How many weekly snapshots to backfill, oldest to newest. The last one is
+# stamped "now" and is what /api/stats, /api/listings, and /api/deals show
+# as the current state; the rest exist purely to give /api/trends more than
+# one data point.
+WEEKS_OF_HISTORY = 6
+NOW = datetime.now(timezone.utc)
 
 # condition -> relative weight (vintage resale skews used)
 CONDITIONS = {
@@ -100,7 +112,7 @@ def make_title(brand: str, era: str, adj: str, noun: str, size: str, condition: 
     return " ".join(parts)
 
 
-def price_for(item_type: str, brand: str, condition: str) -> float:
+def price_for(item_type: str, brand: str, condition: str, drift: float = 1.0) -> float:
     low, high = ITEM_TYPES[item_type][1]
     base = random.uniform(low, high)
     base *= BRANDS[brand]["price_mult"]
@@ -112,6 +124,7 @@ def price_for(item_type: str, brand: str, condition: str) -> float:
     }[condition]
     base *= cond_mult
     base *= random.uniform(0.9, 1.1)  # listing-to-listing noise
+    base *= drift  # week-over-week market movement
     # eBay-style price points: mostly .99 / .95 / .00
     cents = random.choice([0.99, 0.99, 0.95, 0.00, 0.50])
     return round(int(base) + cents, 2)
@@ -121,7 +134,10 @@ def fake_item_url() -> str:
     return f"https://www.ebay.com/itm/{random.randint(10**11, 10**12 - 1)}"
 
 
-def main():
+def generate_snapshot(fetched_at_iso: str, drift: float) -> list[dict]:
+    """One run's worth of listings (~150, across all brands), all stamped
+    with the same fetched_at and scaled by drift to simulate that week's
+    market movement."""
     rows = []
     seen_titles = set()
 
@@ -145,20 +161,39 @@ def main():
                 {
                     "brand": brand,
                     "title": title,
-                    "price": price_for(item_type, brand, condition),
+                    "price": price_for(item_type, brand, condition, drift),
                     "currency": CURRENCY,
                     "condition": condition,
                     "item_url": fake_item_url(),
-                    "fetched_at": FETCHED_AT,
+                    "fetched_at": fetched_at_iso,
                 }
             )
             made += 1
 
+    return rows
+
+
+def main():
+    rows = []
+
+    # Random walk for the drift multiplier, oldest week first, so brands
+    # trend up/down over the backfilled history instead of sitting flat.
+    drift = 1.0
+    for week_index in range(WEEKS_OF_HISTORY):
+        weeks_ago = WEEKS_OF_HISTORY - 1 - week_index
+        fetched_at = (NOW - timedelta(weeks=weeks_ago)).isoformat() if weeks_ago else NOW.isoformat()
+
+        rows.extend(generate_snapshot(fetched_at, drift))
+        drift = max(0.85, min(1.2, drift * random.uniform(0.95, 1.06)))
+
     random.shuffle(rows)
     df = pd.DataFrame(rows, columns=CSV_COLUMNS)
     df.to_csv("data/raw_listings.csv", index=False)
-    print(f"Wrote {len(df)} mock listings to data/raw_listings.csv")
+    print(f"Wrote {len(df)} mock listings ({WEEKS_OF_HISTORY} weekly snapshots) to data/raw_listings.csv")
     print(df["brand"].value_counts().to_string())
+    print("\nMost recent snapshot's avg price by brand:")
+    latest = df[df["fetched_at"] == df["fetched_at"].max()]
+    print(latest.groupby("brand")["price"].mean().round(2).to_string())
     print("\nSample:")
     print(df.head(8).to_string(index=False))
 

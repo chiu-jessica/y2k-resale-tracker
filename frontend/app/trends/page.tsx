@@ -46,7 +46,7 @@ export default function TrendsPage() {
 
   return (
     <div className="p-8 space-y-8 max-w-6xl mx-auto">
-      <h1 className="font-grunge text-3xl text-[#ff1493]">Price Trends</h1>
+      <h1 className="font-grunge text-3xl text-[#ff006e]">Price Trends</h1>
       <p className="text-[#ffb3d9] text-sm">
         Average price per brand, bucketed by week. New points appear each time the
         collector runs.
@@ -68,11 +68,25 @@ export default function TrendsPage() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid stroke="#333" strokeDasharray="3 3" />
-              <XAxis dataKey="week" stroke="#f5f5f5" tick={{ fontSize: 12 }} />
+              <XAxis
+                dataKey="week"
+                stroke="#f5f5f5"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(week: string) =>
+                  new Date(week).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                }
+              />
               <YAxis stroke="#f5f5f5" tick={{ fontSize: 12 }} />
               <Tooltip
                 contentStyle={{ background: "#1a1a1a", border: "1px solid #ff006e" }}
                 labelStyle={{ color: "#f5f5f5" }}
+                labelFormatter={(week) =>
+                  new Date(String(week)).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                }
               />
               <Legend />
               {brandsPresent.map((b, i) => (

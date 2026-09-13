@@ -20,10 +20,16 @@ _model = joblib.load("model_artifact.pkl")
 
 def find_underpriced_listings(threshold_pct: float = 0.25):
     client = bigquery.Client(project=PROJECT_ID)
+    table_ref = f"`{PROJECT_ID}.{DATASET}.{TABLE}`"
     query = f"""
         SELECT title, brand, condition, item_type, price, item_url
-        FROM `{PROJECT_ID}.{DATASET}.{TABLE}`
+        FROM {table_ref}
         WHERE price IS NOT NULL
+          -- Only the newest collection run: every run stamps its rows with
+          -- one shared fetched_at, so this excludes older runs' listings
+          -- from showing up as duplicate "deals" once the collector has
+          -- been run more than once.
+          AND fetched_at = (SELECT MAX(fetched_at) FROM {table_ref})
     """
     df = client.query(query).to_dataframe()
 

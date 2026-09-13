@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from typing import Optional
+
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import queries, model, deals
 
@@ -10,7 +12,12 @@ def get_stats():
     return queries.get_summary_stats()
 
 @app.get("/api/listings")
-def get_listings(brand: str = None, item_type: str = None, condition: str = None):
+def get_listings(
+    brand: Optional[list[str]] = Query(None),
+    item_type: Optional[list[str]] = Query(None),
+    condition: Optional[list[str]] = Query(None),
+):
+    # Each param can be repeated (?brand=A&brand=B) to select multiple values.
     return queries.get_filtered_listings(brand, item_type, condition)
 
 @app.get("/api/trends")
