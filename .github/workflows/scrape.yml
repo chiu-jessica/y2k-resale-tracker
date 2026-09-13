@@ -16,6 +16,9 @@ jobs:
           python-version: '3.11'
 
       - run: pip install -r requirements.txt
+      # train_model.py needs scikit-learn/joblib, which aren't in
+      # requirements.txt (that file only covers the collect/clean/load steps).
+      - run: pip install scikit-learn joblib
 
       - run: python scraper.py
       - run: python etl.py
@@ -28,3 +31,14 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
           BIGQUERY_PROJECT_ID: ${{ secrets.BIGQUERY_PROJECT_ID }}
+
+      - name: Retrain model
+        run: python backend/train_model.py
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: gcp-key.json
+          BIGQUERY_PROJECT_ID: ${{ secrets.BIGQUERY_PROJECT_ID }}
+          # train_model.py requires these explicitly (load_to_bigquery.py
+          # falls back to the same values as defaults, so it didn't need
+          # them set here before).
+          BIGQUERY_DATASET: y2k_resale
+          BIGQUERY_TABLE: listings
