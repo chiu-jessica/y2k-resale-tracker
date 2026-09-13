@@ -144,6 +144,3 @@ manually from the GitHub Actions tab). Each run:
 It authenticates with the same GCP service-account key (`GCP_KEY_JSON`
 secret) and `BIGQUERY_PROJECT_ID` secret used by the load step.
 
-## Findings
-
-> TBD
